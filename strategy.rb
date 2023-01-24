@@ -1,4 +1,5 @@
-# Napisz program, który będzie symulował mecz piłki nożnej pomiędzy dwoma drużynami. Program powinien wykorzystywać różne strategie gry drużyn - jedna drużyna powinna grać ofensywnie, druga defensywnie. Drużyny powinny mieć możliwość zmiany swojej strategii w trakcie meczu. Program powinien przedstawiać statystyki meczu, takie jak liczba strzelonych bramek, liczba fauli itp.
+# PL: Napisz program, który będzie symulował mecz piłki nożnej pomiędzy dwoma drużynami. Program powinien wykorzystywać różne strategie gry drużyn - jedna drużyna powinna grać ofensywnie, druga defensywnie. Drużyny powinny mieć możliwość zmiany swojej strategii w trakcie meczu. Program powinien przedstawiać statystyki meczu, takie jak liczba strzelonych bramek, liczba fauli itp.
+# EN: Write a program that simulates a football match between two teams. The program should use different team strategies - one team should play offensively, the other defensively. Teams should be able to change their strategy mid-match. The program should show the statistics of the match, such as the number of goals scored, the number of fouls, etc.
 
 class SoccerGame
   HALFS, MINUTES = 2, 45
