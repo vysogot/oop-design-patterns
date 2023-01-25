@@ -59,7 +59,7 @@ class Worker
   end
 end
 
-workers = [
+WORKERS = [
   Worker.new(speciality: "Bricks", weekdays: [1, 3, 4], working_hours: (9..17), type: "Mason"),
   Worker.new(speciality: "Bricks", weekdays: [1, 2, 5], working_hours: (6..12), type: "Mason"),
   Worker.new(speciality: "Pumps",  weekdays: [1, 3, 6], working_hours: (9..17), type: "Plumber"),
@@ -68,7 +68,7 @@ workers = [
   Worker.new(speciality: "LowVol", weekdays: [1, 2, 5], working_hours: (9..12), type: "Electrician"),
 ]
 
-cs = ConstructionSite.new(workers)
+cs = ConstructionSite.new(WORKERS)
 wi = cs.iterator
 
 while wi.has_next?
@@ -85,3 +85,45 @@ end
 # =>
 # Mason-Bricks: works on Mon, Wed, Thu from 9 to 17
 # Electrician-HighVo: works on Mon, Wed, Thu from 8 to 15
+
+require 'minitest/autorun'
+
+class ConstructionSiteTest < Minitest::Test
+  def test_iterator_filter_weekday
+    cs = ConstructionSite.new(WORKERS)
+    wi = cs.iterator
+    worker = wi.next_one { |w| w.weekdays.include?(2) }
+
+    assert_match "Mason-Bricks", worker.to_s
+  end
+
+  def test_iterator_filter_working_hours
+    cs = ConstructionSite.new(WORKERS)
+    wi = cs.iterator
+    
+    worker = wi.next_one { |w| w.working_hours.include?(10) }
+    assert_match "Mason-Bricks", worker.to_s
+    
+    worker = wi.next_one { |w| w.working_hours.include?(10) }
+    assert_match "Mason-Bricks", worker.to_s
+    
+    worker = wi.next_one { |w| w.working_hours.include?(10) }
+    assert_match "Plumber-Pumps", worker.to_s
+  end
+
+  def test_iterator_filter_type
+    cs = ConstructionSite.new(WORKERS)
+    wi = cs.iterator
+    worker = wi.next_one { |w| w.type == "Plumber" }
+
+    assert_match "Plumber-Pumps", worker.to_s
+  end
+
+  def test_iterator_filter_no_match
+    cs = ConstructionSite.new(WORKERS)
+    wi = cs.iterator
+    worker = wi.next_one { |w| w.weekdays.include?(7) }
+
+    assert_nil worker
+  end
+end
