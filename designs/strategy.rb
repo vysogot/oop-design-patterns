@@ -157,3 +157,48 @@ team2 = Team.new("Legia Warszawa", DefensiveStrategy.new, -> (our_team, opp_team
 sg = SoccerGame.new(team1, team2)
 
 sg.play
+
+# =>
+# Witamy Państwa na spotkaniu pomiędzy drużynami Lech Poznań i Legia Warszawa
+# ---
+# Gol w 11 minucie 1 połowy! Wynik:
+# Lech Poznań 0:1 Legia Warszawa
+# 
+# Gol w 20 minucie 1 połowy! Wynik:
+# Lech Poznań 1:1 Legia Warszawa
+# 
+# Gol w 44 minucie 1 połowy! Wynik:
+# Lech Poznań 2:1 Legia Warszawa
+# 
+# ---
+# ZMIANA! Legia Warszawa nowa strategia: ofensywa
+# ---
+# 
+# Zakończono 1 połowę w 44 minut(y)
+# 
+# Wynik:
+# Lech Poznań 2:1 Legia Warszawa
+# 
+# Faule:
+# Lech Poznań 0:2 Legia Warszawa
+# 
+# Gol w 18 minucie 2 połowy! Wynik:
+# Lech Poznań 2:2 Legia Warszawa
+# 
+# ---
+# ZMIANA! Legia Warszawa nowa strategia: defensywa
+# ---
+# 
+# Gol w 35 minucie 2 połowy! Wynik:
+# Lech Poznań 2:3 Legia Warszawa
+# 
+# Gol w 36 minucie 2 połowy! Wynik:
+# Lech Poznań 3:3 Legia Warszawa
+# 
+# Zakończono 2 połowę w 44 minut(y)
+# 
+# Wynik:
+# Lech Poznań 3:3 Legia Warszawa
+# 
+# Faule:
+# Lech Poznań 2:3 Legia Warszawa
