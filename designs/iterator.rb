@@ -30,19 +30,7 @@ class WorkersIterator
     worker = workers[index]
     @index += 1
     
-    matches?(worker, filters) ? worker : (next_one(filters) if has_next?)
-  end
-
-  def matches?(worker, filters)
-    if filters[:working_hours]
-      return false if (worker.working_hours.to_a & filters[:working_hours].to_a).empty?
-    end
-    
-    if filters[:weekdays]
-      return false if (worker.weekdays & filters[:weekdays]).empty?
-    end
-
-    true
+    yield(worker) ? worker : (next_one { |w| yield(w) } if has_next?)
   end
 end
 
@@ -82,10 +70,15 @@ workers = [
 
 cs = ConstructionSite.new(workers)
 wi = cs.iterator
-filters = { weekdays: [4], working_hours: (10..12) }
 
 while wi.has_next?
-  worker = wi.next_one(filters)
+  
+  # Dynamic filters. Previous version has static filters
+  worker = wi.next_one { |w| 
+    w.weekdays.include?(4) && 
+    !(w.working_hours.to_a & (10..12).to_a).empty?
+  }
+  
   puts worker.to_s if worker
 end
 
