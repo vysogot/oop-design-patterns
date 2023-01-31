@@ -161,5 +161,6 @@ threads << logger_thread
   end
 end
 
+# at_exit { Dir.glob("*log*.txt").each { |path| p "remove"; File.delete(path) } }
+
 threads.each(&:join)
-Dir.glob("*log*.txt").each { |path| File.delete(path) }
