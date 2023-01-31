@@ -1,25 +1,42 @@
-# 16:20 – First I choke. Anxiety, imposter syndrome, and fear of failure. Then I say, have fun :-)
-# 16:50 - I got all but adapter and error messaging and throwing some errors
-# 17:01 - I have error handling with a wait on empty queue but nothing about the adapter
-# 17:07 - What I think about most is how to handle the adapter, should I make many of them to avoid switch
-# 17:21 - my throat hurts. My breath is not conrolled, it's shallow when I do it. It's been an hour, all the adapters are done.
-# 17:34 - okay it's finished
-
 class Logger
-  class EmptyQueueError < StandardError; end
+  class EmptyQueueError < StandardError
+    def initialize(timestamp: Time.now)
+      message = "Trying to read from an empty queue at #{timestamp}"
+      super(message)
+    end
+  end
   
-  attr_accessor :queue, :sources
+  attr_accessor :queue, :source, :sources
   
   def self.instance
     @@logger ||= Logger.new
   end
 
-  def log(message)
-    queue << message   
+  def add_source(source)
+    return if subscribed?(source)
+    
+    puts "#{source.name} subscribed"
+    sources << source
+  end
+
+  def remove_source(source)
+    return unless subscribed?(source)
+    
+    sources.delete(source)
+    puts "#{source.name} unsubscribed"
+  end
+
+  def log(source, message)
+    queue << message if subscribed?(source)
+  end
+
+  def subscribed?(source)
+    sources.include?(source)
   end
 
   def read
     raise EmptyQueueError if queue.empty?
+    
     "#{Time.now} : #{queue.pop}"
   end
   
@@ -27,69 +44,59 @@ class Logger
 
   def initialize
     @queue = Queue.new
-    @sources = []
+    @sources = [:error]
   end
 end
 
 class FileLoggerAdapter
-  attr_reader :file_name
-  
-  def initialize(file_name)
-    @file_name = file_name
-  end
-
-  def format
+  def self.format(file_name)
     File.read(file_name)
   end
 end
 
 class FileSource
   def self.produce 
-    name = "log#{rand(5)}.txt"
+    file_name = generate_file_name
     
-    file = File.open(name, "w") do |f|
-      f.write "This is file #{name} #{rand(10)} and I say " \
-        "#{(65..127).to_a.shuffle.sample(8).map(&:chr).join('')}"
+    File.open(file_name, "w") do |f|
+      f.write generate_content
     end
     
-    name
+    file_name
+  end
+
+  def self.generate_file_name
+    "log#{rand(5)}.txt"
+  end
+
+  def self.generate_content
+    "This is file #{name} #{rand(10)} and I say #{rand_string}"
+  end
+
+  def self.rand_string
+    (65..127).to_a.sample(8).map(&:chr).join('')
   end
 end
 
 class NetworkLoggerAdapter
-  attr_reader :payload
-  
-  def initialize(payload)
-    @payload = payload
-  end
-
-  def format
-    payload.map {|k, v| "#{k}: #{v}"}.join("; ")
+  def self.format(raw)
+    raw.map {|key, value| "#{key}: #{value}"}.join("; ")
   end
 end
 
 class NetworkSource
   def self.produce 
-    {
-      ip: "#{Array.new(4) { ip_rand }.join('.')}",
-      msg: "#{rand(100)}"
-    }
+    { ip: "#{ip_rand}", msg: "#{rand(100)}" }
   end
 
   def self.ip_rand
-    rand(256)
+    Array.new(4) { rand(256) }.join('.')
   end
 end
 
 class ConsoleLoggerAdapter
-  attr_reader :command
-  
-  def initialize(command)
-    @command = command
-  end
-
-  def format
-    command.split(" saying ").join(" > ")
+  def self.format(raw)
+    raw.split(" saying ").join(" > ")
   end
 end
 
@@ -99,6 +106,26 @@ class ConsoleSource
   end
 end
 
+class SourceSubscriber
+  attr_reader :source, :logger
+  
+  def initialize(source)  
+    @source = source
+    @logger = Logger.instance 
+  end
+
+  def toggle
+    case rand(5)
+    when 0
+      logger.remove_source(source)
+    when 1
+      logger.add_source(source)
+    end
+  end
+end
+
+# Runner
+
 logger = Logger.instance
 threads = []
 
@@ -106,7 +133,8 @@ logger_thread = Thread.new do
   loop do
     begin
       puts logger.read
-    rescue Logger::EmptyQueueError
+    rescue Logger::EmptyQueueError => e
+      puts e.message
       sleep(1)
     end
   end
@@ -115,16 +143,23 @@ end
 threads << logger_thread
 
 [
-  [FileLoggerAdapter, FileSource],
+  [FileLoggerAdapter,    FileSource],
   [NetworkLoggerAdapter, NetworkSource], 
   [ConsoleLoggerAdapter, ConsoleSource]
-].each do |adapter_class, source|
+].each do |adapter, source|
   threads << Thread.new do 
+    source_subscriber = SourceSubscriber.new(source)
+    
     loop do 
-      logger.log(adapter_class.new(source.produce).format)
+      source_subscriber.toggle
+      raw = source.produce
+      formatted = adapter.format(raw)
+
+      logger.log(source, formatted)
       sleep(rand(3))
     end
   end
 end
 
 threads.each(&:join)
+Dir.glob("*log*.txt").each { |path| File.delete(path) }
