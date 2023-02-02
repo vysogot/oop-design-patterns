@@ -4,9 +4,9 @@ class CharacterFactory
   def self.create(type)
     begin 
       title = titleize(type)
-      abilities_bridge = Module.const_get("#{title}Abilities")
+      abilities_service = Module.const_get("#{title}Abilities")
       
-      Character.new(type, abilities_bridge.new)
+      Character.new(type, abilities_service.new)
     rescue AbilityNotFound 
       raise AbilityNotFound, "No abilities known for a #{title}"
     end
@@ -75,24 +75,15 @@ class ArcherAbilities < CharacterAbilities
 end
 
 class Character
-  attr_reader :type, :abilities_bridge
+  attr_reader :type, :abilities_service
 
-  def initialize(type, abilities_bridge)
+  def initialize(type, abilities_service)
     @type = type
-    @abilities_bridge = abilities_bridge
+    @abilities_service = abilities_service
   end
 
-  def current_ability
-    abilities_bridge.current_ability
-  end
-
-  def abilities 
-    abilities_bridge.abilities
-  end
-
-  def switch_ability(ability)
-    abilities_bridge.switch_ability(ability)
-  end
+  delegate :current_ability, :abilities, :switch_ability, 
+    to: abilities_service
 end
 
 warrior = CharacterFactory.create(:warrior)
