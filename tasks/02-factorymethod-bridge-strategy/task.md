@@ -1,3 +1,8 @@
+# Set 2:
+C - Factory Method
+S - Bridge
+B - Strategy
+
 ## Client
 We are looking for a software developer to design and implement a game character creator. This character creator will be used in a role-playing game, where players can create and customize their characters.
 
