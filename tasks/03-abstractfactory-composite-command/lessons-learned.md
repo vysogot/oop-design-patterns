@@ -13,3 +13,7 @@ Doing the undo operation on the command needed some thought. First of all, how t
 And with this I learned a lot about deep copying of the objects. I didn't use Marshalling as I want to keep it simple. So the trick was to copy both, the component object and its attributes. Also, as now the `object_ids` are different in the snapshots and in the actual composite, the `ids` had to be introduced.
 
 This way, because I had to change the way I create objects in the component class, I also understood why making factories is important. The client code didn't change in terms of passing the color. All I had to do was adjusting the way objects are created in the factory. That is nice creational decoupling.
+
+Also! It's very easy to make nested composites. Just one method needs to be added in both components and composites, `leaf`, one is always false, the other true, respectively.
+
+A future excercise is about the versioning of composite snapshots. To make them multithread safe. With some mutexes and so on, I don't know how to do it yet in plain Ruby. Or I know but I haven't written it yet.
