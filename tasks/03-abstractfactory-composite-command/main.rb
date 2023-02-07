@@ -47,7 +47,6 @@ class Composite
     child = find(component.id)
     return unless child
     
-    child.parent = nil
     components.delete(child)
   end
 
@@ -162,48 +161,56 @@ class UpdateComponent < ComponentCommand
   end
 end
 
-jet_factory = Factory.create(:jet)
-shield_factory = Factory.create(:shield)
+require 'minitest/autorun'
 
-big_jet = jet_factory.create(:big, :blue)
-wide_shield1 = shield_factory.create(:big, :yellow)
-wide_shield2 = shield_factory.create(:big, :dark)
+class CompositeTest < Minitest::Test
+  def setup
+    @composite = Composite.new
 
-# without commands 
-composite = Composite.new
-composite.add_component(big_jet)
-composite.add_component(wide_shield1)
-composite.add_component(wide_shield2)
-composite.remove_component(wide_shield1)
+    jet_factory = Factory.create(:jet)
+    shield_factory = Factory.create(:shield)
 
-p composite.components.map(&:to_s)
+    @wide_shield1 = shield_factory.create(:big, :yellow)
+    @wide_shield2 = shield_factory.create(:big, :dark)
+  end
 
-# with commands
-puts "adding yellow wide shield"
-adding = AddComponent.new(composite)
-adding.execute(wide_shield1)
-p composite.components.map(&:to_s)
+  def test_adds_and_undoes
+    command = AddComponent.new(@composite)
+    
+    command.execute(@wide_shield1)
+    assert_equal [@wide_shield1], @composite.components
+    
+    command.undo
+    assert_equal [], @composite.components
+  end
+  
+  def test_removes_and_undoes
+    @composite.add_component(@wide_shield1)
+    @composite.add_component(@wide_shield2)
 
-puts "undo adding"
-adding.undo
-p composite.components.map(&:to_s)
+    command = RemoveComponent.new(@composite)
+    command.execute(@wide_shield1)
+    
+    assert_equal [@wide_shield2.id], @composite.components.map(&:id)
+    
+    command.undo
+    assert_equal [@wide_shield1.id, @wide_shield2.id], @composite.components.map(&:id)
+  end
+  
+  def test_updates_and_undoes
+    @composite.add_component(@wide_shield1)
+    @composite.add_component(@wide_shield2)
+    
+    command = UpdateComponent.new(@composite)
+    command.execute(@wide_shield1, color: :cream)
 
-puts "removing dark wide shield"
-removing = RemoveComponent.new(composite)
-removing.execute(wide_shield2)
-p composite.components.map(&:to_s)
-
-puts "undo removing"
-removing.undo
-p composite.components.map(&:to_s)
-
-puts "updating big jet color"
-updating = UpdateComponent.new(composite)
-updating.execute(big_jet, color: :cream)
-p composite.components.map(&:to_s)
-
-puts "undo updating"
-updating.undo
-p composite.components.map(&:to_s)
-
-composite.build
+    assert_equal :cream, @wide_shield1.attributes[:color]
+    assert_equal [@wide_shield1, @wide_shield2], @composite.components
+    
+    command.undo
+    updated = @composite.components.find { |c| c.id == @wide_shield1.id }
+    
+    assert_equal :yellow, updated.attributes[:color] 
+    assert_equal [@wide_shield1.id, @wide_shield2.id], @composite.components.map(&:id)
+  end
+end
