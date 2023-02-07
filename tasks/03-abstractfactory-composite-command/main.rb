@@ -32,10 +32,10 @@ class ShieldFactory
 end
 
 class Composite 
-  attr_accessor :components
+  attr_accessor :components, :parent
   
   def initialize
-    @components = [] 
+    @components = []
   end
 
   def add_component(component)
@@ -58,7 +58,13 @@ class Composite
   end
 
   def build
-    components.each { |component| component.build }
+    components.each(&:build)
+  end
+
+  def leaf_components
+    components.reduce([]) do |array, component|
+      component.leaf? ? array << component : array + component.leaf_components
+    end
   end
 
   def make_snapshot
@@ -74,6 +80,10 @@ class Composite
     snapshot.each do |attr, value|
       self.send("#{attr}=", value)
     end
+  end
+
+  def leaf?
+    false
   end
 end
 
@@ -105,6 +115,10 @@ class Component
 
   def to_s
     "#{self.class.name} #{attributes}"
+  end
+
+  def leaf?
+    true
   end
 
   private
@@ -170,6 +184,7 @@ class CompositeTest < Minitest::Test
     jet_factory = Factory.create(:jet)
     shield_factory = Factory.create(:shield)
 
+    @big_jet      = jet_factory.create(:big, :green)
     @wide_shield1 = shield_factory.create(:big, :yellow)
     @wide_shield2 = shield_factory.create(:big, :dark)
   end
@@ -212,5 +227,17 @@ class CompositeTest < Minitest::Test
     
     assert_equal :yellow, updated.attributes[:color] 
     assert_equal [@wide_shield1.id, @wide_shield2.id], @composite.components.map(&:id)
+  end
+
+  def test_composite_as_component
+    composite2 = Composite.new
+    composite2.add_component(@big_jet)
+    
+    @composite.add_component(@wide_shield1)
+    @composite.add_component(@wide_shield2)
+    @composite.add_component(composite2)
+
+    assert_equal [@wide_shield1.id, @wide_shield2.id, @big_jet.id].sort,
+      @composite.leaf_components.map(&:id).sort
   end
 end
